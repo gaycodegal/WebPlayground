@@ -98,7 +98,7 @@ Chain.prototype.bendTowards = function (pt, amount) {
     
     var l = this.lines.length,
         max = (Math.PI * 2 * (l-1)/(l));
-    
+    console.log(total/max, 1 - temp.c.y/(50*l));
     if (total >= max) {
         var div = (total - max)/(l*(l-1)/2) + amount/10;
         //console.log("fail", total, max);
@@ -132,7 +132,7 @@ l1.draw(ctx);
 //for (var i = 0; i < 50; ++i) {
     setInterval(function(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    l1.bendTowards(0, 0.01);
+    l1.bendTowards(0, 0.06/n);
     l1.draw(ctx);
     }, 10);
 //}
