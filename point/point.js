@@ -96,6 +96,7 @@ Chain.prototype.bendTowards = function (pt, amount) {
     }
     var temp = Line.between(this.points[0], this.points[this.points.length - 1]);
     var total = 0;
+    this.begin.c.x = (this.begin.c.x*5 + ptline.c.x) / 6;
     var delta = temp.c.x - this.begin.c.x;
     for (var i = 0; i < this.lines.length; ++i) {
         this.lines[i].c.x -= delta;
@@ -137,9 +138,9 @@ var l1 = new Chain(a.map(function (x) {
 }));
 l1.draw(ctx);
 
-var pt = new Point(window.innerHeight/2, window.innerWidth);
-
-
+var pt = new Point(20,20);
+var ptline = Line.between(l1.points[0], pt);
+var desired = 0;
 function cycle(){
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     l1.bendTowards(0, 0.06/n);
@@ -157,8 +158,11 @@ function cycle(){
     }, 10);
 //}
 
-
-on(window, "click", function(e){
+function ptupdate(e){
     pt.set(new Point(e.pageX, e.pageY));
+    ptline = Line.between(l1.points[0], pt);
     cycle();
-});
+}
+
+on(window, "click", ptupdate);
+on(window, "mousemove", ptupdate);
