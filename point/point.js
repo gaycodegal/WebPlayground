@@ -57,6 +57,7 @@ Line.between = function (p1, p2) {
 
 function Chain(points) {
     this.d = 1;
+    this.total = 0;
     this.points = points;
     this.lines = new Array(points.length - 1);
     for (var i = 0, max = points.length - 1; i < max; ++i) {
@@ -74,8 +75,20 @@ Chain.prototype.draw = function (ctx) {
     });
 };
 
+function calc(a,l,d,t){
+    return (a*(l-1)*d) + t;
+}
+
 Chain.prototype.bendTowards = function (pt, amount) {
-    var d = this.d;
+    var d = this.d, l = this.lines.length;
+    var max = (Math.PI * 2 * (l-1)/(l));
+    var newtotal = calc(amount, l, d, this.total);
+    if (Math.abs(newtotal) >= max) {
+        d = -d;
+        this.d = d;
+        newtotal = calc(amount, l, d, this.total);
+    }
+    this.total = newtotal;
 
     for (var i = 0; i < this.lines.length; ++i) {
         this.lines[i].a += amount * (i) * d;
@@ -86,20 +99,15 @@ Chain.prototype.bendTowards = function (pt, amount) {
     var delta = temp.c.x - this.begin.c.x;
     for (var i = 0; i < this.lines.length; ++i) {
         this.lines[i].c.x -= delta;
-        //console.log(i, this.lines[i].a);
-        if (i >= 1){
-            var dif = Math.abs(this.lines[i].a - this.lines[i - 1].a, 2);
-            //console.log("dif", dif);
-            total += dif            
-        }
         this.points[i + 1].set(this.lines[i].endPoint());
+        //if(i > 0)
+        //    total += Math.abs(this.lines[i].a- this.lines[i-1].a);
     }
     //2/3, 3/4, 4/5
-    
-    var l = this.lines.length,
-        max = (Math.PI * 2 * (l-1)/(l));
-    console.log(total/max, 1 - temp.c.y/(50*l));
-    if (total >= max) {
+
+        console.log(newtotal/max, total, newtotal, max);
+
+    /*if (total >= max) {
         var div = (total - max)/(l*(l-1)/2) + amount/10;
         //console.log("fail", total, max);
         for (var i = 0; i < this.lines.length; ++i) {
@@ -108,7 +116,7 @@ Chain.prototype.bendTowards = function (pt, amount) {
             this.points[i + 1].set(this.lines[i].endPoint());
         }
         this.d = -d;
-    }
+    }*/
 };
 
 var t = Math.min(window.innerWidth, window.innerHeight) / 2,
@@ -129,10 +137,28 @@ var l1 = new Chain(a.map(function (x) {
 }));
 l1.draw(ctx);
 
-//for (var i = 0; i < 50; ++i) {
-    setInterval(function(){
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+var pt = new Point(window.innerHeight/2, window.innerWidth);
+
+
+function cycle(){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     l1.bendTowards(0, 0.06/n);
     l1.draw(ctx);
+    ctx.save();
+    pt.draw(ctx);
+    ctx.fillStyle = "green";
+    ctx.restore();
+
+}
+
+//for (var i = 0; i < 50; ++i) {
+    setInterval(function(){
+        cycle();
     }, 10);
 //}
+
+
+on(window, "click", function(e){
+    pt.set(new Point(e.pageX, e.pageY));
+    cycle();
+});
