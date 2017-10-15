@@ -40,6 +40,7 @@ Point.prototype.draw = function (ctx) {
 function Line(origin, circ, color) {
     this.o = origin;
     this.c = circ;
+    this.a = 0;
     this.color = color || "red";
 }
 
@@ -61,7 +62,7 @@ Line.prototype.fixAngle = function () {
 
 
 Line.prototype.draw = function (ctx) {
-    var cx = this.c.x;
+    var cx = this.c.x + this.a;
     ctx.save();
     ctx.beginPath();
     if (this.color) {
@@ -74,7 +75,7 @@ Line.prototype.draw = function (ctx) {
 };
 
 Line.prototype.endPoint = function () {
-    var cx = this.c.x;
+    var cx = this.c.x + this.a;
     return new Point(this.o.x + Math.cos(cx) * this.c.y, this.o.y + Math.sin(cx) * this.c.y, "orange");
 };
 
@@ -94,7 +95,6 @@ function Triangle(line, speed) {
     this.min = this.getmin();
     this.max = this.getmax();
 }
-
 Triangle.prototype.calculateDrop = function () {
     var end = this.line.endPoint(),
         start = this.line.o;
@@ -104,17 +104,17 @@ Triangle.prototype.calculateDrop = function () {
         min = end;
         max = start;
     }
-    this.points = [start, end, new Point(min.x, max.y, "white")];
-    this.lines = [this.line, Line.between(min, this.points[2], "rgba(0,0,0,0)"), Line.between(max, this.points[2], "rgba(0,0,0,0)")];
+    this.points = [start, end/*, new Point(min.x, max.y, "white")*/];
+    this.lines = [this.line, /*Line.between(min, this.points[2], "red"), Line.between(max, this.points[2], "green")*/];
 };
 
 Triangle.prototype.draw = function (ctx) {
     this.lines.map(function (x) {
         x.draw(ctx);
-    });
+    });/*
     this.points.map(function (x) {
         x.draw(ctx);
-    });
+    });*/
 };
 
 Triangle.prototype.getmin = function (amount) {
@@ -130,7 +130,7 @@ Triangle.prototype.getmax = function (amount) {
 };
 
 Triangle.prototype.step = function () {
-    if (this.right) {
+    /*if (this.right) {
         this.line.c.x += this.right;
         if (this.line.c.x >= this.desire) {
             this.line.c.x = this.desire;
@@ -144,7 +144,8 @@ Triangle.prototype.step = function () {
             this.left = 0;
         }
         this.calculateDrop();
-    }
+    }*/
+    this.line.c.x = this.desire;
 };
 
 /*
@@ -210,7 +211,7 @@ Triangle.prototype.set = function (x, d) {
     }
     this.desire = fixAngle(d * Math.acos(amt));
     this.queueDesire();
-    return amt;
+    return amt * this.max;
 };
 
 
@@ -221,32 +222,26 @@ var t = Math.min(window.innerWidth, window.innerHeight) / 2,
 
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
-var tri = new Triangle(new Line(new Point(window.innerWidth / 2, window.innerHeight / 2, "yellow"), new Point(Math.PI / 4, 100), "blue"), Math.PI / 400);
-tri.draw(ctx);
-console.log(tri.min, tri.max);
 
-var d = -1,
-    x = 600;
-if (tri.give(x, d)) {
-    d = -d;
-}
 
 function Chain(length, angle, num) {
+    this.angle = angle;
     this.tris = new Array(num);
     this.weights = new Array(num);
-    this.sums = new Array(num + 1);
-    this.sums[0] = 0;
+    this.vals = new Array(num);
+    this.vals[0] = 0;
     var n2 = num / 2 | 0;
     var sum = n2 * (n2 + 1);
     for (var i = 0; i < n2; ++i) {
         this.weights[i] = (i + 1) / sum;
     }
-    for (var i = n2; i < num; ++i) {
+    this.weights[n2] = 0;
+    for (var i = n2 + ((num & 1) ? 1: 0); i < num; ++i) {
         this.weights[i] = (num - i) / sum;
     }
     var lastOrig = new Point(window.innerWidth / 2, window.innerHeight / 2, "yellow");
     for (var i = 0; i < num; ++i) {
-        var line = new Line(lastOrig, new Point(angle, length), "blue");
+        var line = new Line(lastOrig, new Point(0, length), "blue");
         this.tris[i] = new Triangle(line, Math.PI / 400);
         lastOrig = line.endPoint();
         //lastOrig.color = "yellow";
@@ -255,13 +250,35 @@ function Chain(length, angle, num) {
 
 Chain.prototype.set = function (len) {
     var n2 = this.tris.length / 2 | 0;
+    var sum = 0;
     for (var i = 0; i < n2; ++i) {
-        this.sums[i + 1] = this.sums[i] + this.tris[i].set(this.weights[i] * len, 1);
+        sum += this.vals[i] = this.tris[i].set(this.weights[i] * len, 1);
     }
     for (var i = n2; i < this.tris.length; ++i) {
-        this.sums[i + 1] = this.sums[i] + this.tris[i].set(this.weights[i] * len, -1);
+        sum += this.vals[i] = this.tris[i].set(this.weights[i] * len, -1);
+    }
+    var cur = sum;
+    var diff = len - cur;
+    var delta = 0;
+    if (Math.abs(cur) < Math.abs(len)) {
+        var i = this.tris.length;
+        var j = -1; 
+        while (i-- && j++ < n2 && Math.abs(cur + delta) < Math.abs(len)) {
+            var x = this.tris[i].set(this.weights[i] * len + diff / 2, i < n2 ? 1 : -1) - this.vals[i];
+            x += this.tris[j].set(this.weights[j] * len + diff / 2, j < n2 ? 1 : -1) - this.vals[j];
+            diff -= x;
+            delta += x;
+
+        }
     }
 };
+
+Chain.prototype.setAngle = function (angle) {
+    this.angle = angle;
+    for (var i = 0; i < this.tris.length; ++i) {
+        this.tris[i].line.a = this.angle;
+    }
+}
 
 Chain.prototype.step = function () {
     for (var i = 0; i < this.tris.length; ++i) {
@@ -278,16 +295,28 @@ Chain.prototype.draw = function (ctx) {
         this.tris[i].draw(ctx);
     }
 };
+var pt = new Point(0, 0);
 
-var chain = new Chain(30, Math.PI / 4, 10);
+var chain = new Chain(30, Math.PI / 4, 4);
 chain.set(0);
 setInterval(function () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     chain.step();
+    pt.draw(ctx);
     chain.draw(ctx);
 }, 10);
 
 
+
+function ptupdate(e) {
+    pt.set(new Point(e.pageX, e.pageY));
+    var x = pt.x - window.innerWidth / 2,
+        y = pt.y - window.innerHeight / 2;
+    chain.setAngle(Math.atan2(y, x));
+    chain.set(Math.sqrt(x * x + y * y));
+}
+
+on(window, "mousemove", ptupdate);
 /*
 
 
