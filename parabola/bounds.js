@@ -90,6 +90,7 @@ Line.between = function (p1, p2, color) {
 function Triangle(line, speed) {
     this.speed = speed || 1;
     this.line = line;
+    this.desire = 0;
     this.lines = new Array(3);
     this.calculateDrop();
     this.min = this.getmin();
@@ -236,6 +237,8 @@ function Chain(length, angle, num) {
         this.weights[i] = (i + 1) / sum;
     }
     this.weights[n2] = 0;
+    this.vals[n2] = 0;
+    this.sublen = (num & 1) ? length : 0;
     for (var i = n2 + ((num & 1) ? 1: 0); i < num; ++i) {
         this.weights[i] = (num - i) / sum;
     }
@@ -249,25 +252,30 @@ function Chain(length, angle, num) {
 }
 
 Chain.prototype.set = function (len) {
+    len -= this.sublen;
     var n2 = this.tris.length / 2 | 0;
     var sum = 0;
     for (var i = 0; i < n2; ++i) {
         sum += this.vals[i] = this.tris[i].set(this.weights[i] * len, 1);
     }
-    for (var i = n2; i < this.tris.length; ++i) {
+    //console.log(n2, n2 + ((this.tris.length & 1) ? 1 : 0), );
+    for (var i = n2 + ((this.tris.length & 1) ? 1 : 0); i < this.tris.length; ++i) {
         sum += this.vals[i] = this.tris[i].set(this.weights[i] * len, -1);
     }
+    //console.log(this.vals, len);
     var cur = sum;
     var diff = len - cur;
     var delta = 0;
     if (Math.abs(cur) < Math.abs(len)) {
         var i = this.tris.length;
         var j = -1; 
-        while (i-- && j++ < n2 && Math.abs(cur + delta) < Math.abs(len)) {
+        while (i-- && ++j < n2 && Math.abs(cur + delta) < Math.abs(len)) {
+            //console.log(i, j, n2);
             var x = this.tris[i].set(this.weights[i] * len + diff / 2, i < n2 ? 1 : -1) - this.vals[i];
             x += this.tris[j].set(this.weights[j] * len + diff / 2, j < n2 ? 1 : -1) - this.vals[j];
             diff -= x;
             delta += x;
+            //console.log(x);
 
         }
     }
@@ -285,6 +293,7 @@ Chain.prototype.step = function () {
         this.tris[i].step();
     }
     for (var i = 1; i < this.tris.length; ++i) {
+        //console.log();
         this.tris[i].startSet(this.tris[i - 1].line.endPoint());
     }
 
@@ -297,11 +306,11 @@ Chain.prototype.draw = function (ctx) {
 };
 var pt = new Point(0, 0);
 
-var chain = new Chain(30, Math.PI / 4, 4);
+var chain = new Chain(30, Math.PI / 4, parseInt(prompt("n = ? (2+)")) || 3);
 chain.set(0);
 setInterval(function () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    chain.step();
+    
     pt.draw(ctx);
     chain.draw(ctx);
 }, 10);
@@ -313,6 +322,7 @@ function ptupdate(e) {
     var x = pt.x - window.innerWidth / 2,
         y = pt.y - window.innerHeight / 2;
     chain.setAngle(Math.atan2(y, x));
+    chain.step();
     chain.set(Math.sqrt(x * x + y * y));
 }
 
