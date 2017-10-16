@@ -306,7 +306,7 @@ Chain.prototype.draw = function (ctx) {
 };
 var pt = new Point(0, 0);
 
-var chain = new Chain(30, Math.PI / 4, parseInt(prompt("n = ? (2+)")) || 3);
+var chain = new Chain(parseInt(prompt("length in px per link?")) || 30, Math.PI / 4, parseInt(prompt("n = ? (2+)")) || 3);
 chain.set(0);
 setInterval(function () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
