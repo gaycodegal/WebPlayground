@@ -89,16 +89,16 @@ function origin() {
 function AngleTween(start, end, dt){
     var st = fixAngle(start), et = fixAngle(end);
     this.size = 100;
-    this.s = start;
-    this.e = end;
-    this.dx = et - st;
+    this.s = st;
+    this.e = et;
+    this.dx = fixAngle(et - st);
     this.dt = dt;
     this.ct = 0;
 
-    this.start = new Line(origin(), new Point(start, this.size), "green");
-    this.end = new Line(origin(), new Point(end, this.size), "red");
+    this.start = new Line(origin(), new Point(st, this.size), "green");
+    this.end = new Line(origin(), new Point(et, this.size), "red");
 
-    this.line = new Line(origin(), new Point(start, this.size), "black");
+    this.line = new Line(origin(), new Point(st, this.size), "black");
 
 }
 
@@ -172,7 +172,7 @@ function runTest(as, ae, at, color){
     }, 10);
 }
 
-var testtime = 500, testruns = 20;
+var testtime = 100, testruns = 20;
 battery = new TestBattery(runTest, [
     function(state){
 	//console.log(state);
@@ -187,6 +187,20 @@ battery = new TestBattery(runTest, [
 	    return;
 	var delta = state.trial * Math.PI/10
 	return [Math.PI + 0.5 + delta, delta, testtime, "yellow"];
+    },
+    function(state){
+	//console.log(state);
+	if(state.trial > testruns)
+	    return;
+	var delta = state.trial * Math.PI/10
+	return [Math.PI/2 + delta, Math.PI/2, testtime, "yellow"];
+    },
+    function(state){
+	//console.log(state);
+	if(state.trial > testruns)
+	    return;
+	var delta = state.trial * Math.PI/10
+	return [Math.PI/2, Math.PI/2 + delta, testtime, "yellow"];
     }
 
 ]);
