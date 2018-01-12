@@ -172,34 +172,34 @@ function runTest(as, ae, at, color){
     }, 10);
 }
 
-var testtime = 100, testruns = 20;
+var testtime = 300, testruns = 16;
 battery = new TestBattery(runTest, [
-    function(state){
+/*    function(state){
 	//console.log(state);
 	if(state.trial > testruns)
 	    return;
-	var delta = state.trial * Math.PI/10
+	var delta = state.trial * Math.PI/(testruns/2)
 	return [Math.PI - 0.5 + delta, delta, testtime, "blue"];
     },
     function(state){
 	//console.log(state);
 	if(state.trial > testruns)
 	    return;
-	var delta = state.trial * Math.PI/10
+	var delta = state.trial * Math.PI/(testruns/2)
 	return [Math.PI + 0.5 + delta, delta, testtime, "yellow"];
-    },
+    },*/
     function(state){
 	//console.log(state);
 	if(state.trial > testruns)
 	    return;
-	var delta = state.trial * Math.PI/10
+	var delta = state.trial * Math.PI/(testruns/2)
 	return [Math.PI/2 + delta, Math.PI/2, testtime, "yellow"];
     },
     function(state){
 	//console.log(state);
 	if(state.trial > testruns)
 	    return;
-	var delta = state.trial * Math.PI/10
+	var delta = state.trial * Math.PI/(testruns/2)
 	return [Math.PI/2, Math.PI/2 + delta, testtime, "yellow"];
     }
 
