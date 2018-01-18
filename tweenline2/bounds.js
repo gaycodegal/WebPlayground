@@ -131,13 +131,14 @@ function AngleBro(line, next, factor1){
     this.line = line;
     this.next = next;
     this.f1 = factor1;
+    this.sign = 1;
 }
 
 AngleBro.prototype.stepTowards = function(pt){
     var st = fixAngle(this.line.c.x),
 	et = fixAngle(angleBetween(this.line.o, pt) - Math.PI);
     var delta = fixAngle(et - st);
-    this.line.c.x += delta / this.f1;
+    this.line.c.x += this.sign * delta / this.f1;
     if(this.next)
 	this.next.setOrigin(this.line.endPoint());
 };
@@ -182,10 +183,13 @@ function parse_query_string(query) {
 
 var args = parse_query_string(location.href.split("?")[1] || "");
 console.log(args);
+var sign = 1;
 var pt = new Point(0, 0, "black");
 var n = parseInt(args.n) || 10,
     l = parseFloat(args.length) || 30,
-    factor1 = parseFloat(args.factor) || 100;
+    factor1 = parseFloat(args.factor) || 100,
+    easedist = parseFloat(args.easedist) || 1.2,
+    easingdiv = parseFloat(args.easingdiv) || 4;
 
 function factor2(i){
     var N = (n - 1);
@@ -208,14 +212,29 @@ bros[0].updateOrigin({x:cx, y:cy});
 
 function cycle(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if(Line.between(bros[n - 1].line.o, pt).c.y >= l){
-	for(var j = 0; j < 3; ++j){
-	    for(var i = 0; i < n; ++i){
-		bros[i].stepTowards(pt);
-	    }
-	}
-	//bros[0].updateOrigin({x:cx, y:cy});
+    
+    var sgn = Math.max(0, Math.min(Line.between(bros[n - 1].line.o, pt).c.y/(l*easedist), 1));
+    if(sgn < 1){
+	sgn = (sgn * sgn) / easingdiv;
     }
+    //console.log(sgn);
+    if(Line.between(bros[n - 1].line.o, pt).c.y <= l){
+	sgn = -sgn;
+    }
+    for(var i = 0; i < n - 1; ++i){
+	bros[i].sign = sgn;
+    }
+    /*}else{
+	for(var i = 0; i < n - 1; ++i){
+	    bros[i].sign = -1;
+	}
+    }*/
+    for(var j = 0; j < 3; ++j){
+	for(var i = 0; i < n; ++i){
+	    bros[i].stepTowards(pt);
+	}
+    }
+    //bros[0].updateOrigin({x:cx, y:cy});
     for(var i = n - 1; i >= 0; --i){
 	bros[i].draw(ctx);
     }
